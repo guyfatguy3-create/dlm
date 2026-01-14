@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DLM — Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --blue-primary: #4A90D9;
+            --blue-glow: rgba(74, 144, 217, 0.6);
+            --blue-dark: #1e5a8a;
+            --green-primary: #4CAF50;
+            --sun-yellow: #FFD93D;
+            --text-dark: #1a3a4a;
+            --text-mid: #3a5a6a;
+            --text-light: #6a8a9a;
+        }
+        body { font-family: 'Rajdhani', sans-serif; background: #87ceeb; color: var(--text-dark); min-height: 100vh; overflow: hidden; }
+
+        .sky-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(180deg, #4a90d9 0%, #7ec8e3 50%, #87ceeb 100%); }
+        .sun { position: absolute; top: 10%; left: 10%; width: 80px; height: 80px; background: radial-gradient(circle, #fff9c4 0%, #FFD93D 50%, rgba(255, 217, 61, 0) 70%); border-radius: 50%; box-shadow: 0 0 60px rgba(255, 217, 61, 0.4); }
+        .cloud { position: absolute; background: rgba(255, 255, 255, 0.8); border-radius: 100px; }
+        .cloud::before, .cloud::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.8); border-radius: 50%; }
+        .cloud-1 { width: 150px; height: 50px; top: 15%; right: 10%; animation: drift 35s linear infinite; }
+        .cloud-1::before { width: 70px; height: 60px; top: -30px; left: 20px; }
+        .cloud-1::after { width: 80px; height: 50px; top: -20px; right: 20px; }
+        @keyframes drift { 0% { transform: translateX(0); } 100% { transform: translateX(-100vw); } }
+
+        header { position: fixed; top: 0; left: 0; width: 100%; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; z-index: 1000; background: linear-gradient(180deg, rgba(74, 144, 217, 0.95) 0%, rgba(126, 200, 227, 0.8) 100%); border-bottom: 1px solid rgba(74, 144, 217, 0.2); }
+        .logo { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900; color: var(--blue-dark); letter-spacing: 6px; text-decoration: none; }
+        .header-status { display: flex; align-items: center; gap: 0.75rem; }
+        .status-dot { width: 8px; height: 8px; background: var(--green-primary); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .status-text { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; color: var(--text-mid); letter-spacing: 2px; }
+        .back-link { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: var(--text-mid); text-decoration: none; letter-spacing: 2px; }
+        .back-link:hover { color: var(--blue-dark); }
+
+        .main-container { display: flex; height: 100vh; padding-top: 60px; }
+
+        .character-panel { width: 40%; min-width: 350px; max-width: 500px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 2rem; overflow: hidden; }
+        .character-glow { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); width: 300px; height: 300px; background: radial-gradient(ellipse, rgba(74, 144, 217, 0.3) 0%, transparent 70%); filter: blur(40px); z-index: 0; }
+        .character-img { max-height: 80vh; width: auto; max-width: 100%; object-fit: contain; z-index: 1; filter: drop-shadow(0 10px 30px rgba(0,0,0,0.2)); animation: float 4s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .chat-panel { flex: 1; display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border-left: 1px solid rgba(74, 144, 217, 0.2); }
+        
+        .chat-header { padding: 1rem 1.5rem; border-bottom: 1px solid rgba(74, 144, 217, 0.15); background: rgba(255, 255, 255, 0.5); display: flex; align-items: center; gap: 1rem; }
+        .chat-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--blue-primary); box-shadow: 0 2px 10px var(--blue-glow); }
+        .chat-header-info { flex: 1; }
+        .chat-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: var(--text-dark); letter-spacing: 2px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+        .online-indicator { width: 8px; height: 8px; background: var(--green-primary); border-radius: 50%; animation: pulse 2s infinite; }
+        .chat-subtitle { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-mid); }
+        
+        .chat-messages { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
+        .chat-messages::-webkit-scrollbar-thumb { background: var(--blue-primary); border-radius: 2px; }
+        
+        .message { max-width: 85%; animation: msgIn 0.3s ease; }
+        @keyframes msgIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .message.dlm { align-self: flex-start; }
+        .message.user { align-self: flex-end; }
+        
+        .message-bubble { display: flex; gap: 0.75rem; align-items: flex-start; }
+        .message.user .message-bubble { flex-direction: row-reverse; }
+        
+        .message-avatar-small { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--blue-primary); flex-shrink: 0; }
+        .message.user .message-avatar-small { border-color: var(--green-primary); background: var(--green-primary); display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; font-size: 0.6rem; color: white; font-weight: 600; }
+        
+        .message-content { padding: 0.85rem 1rem; border-radius: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.5; }
+        .message.dlm .message-content { background: rgba(74, 144, 217, 0.15); border: 1px solid rgba(74, 144, 217, 0.25); border-radius: 16px 16px 16px 4px; color: var(--text-dark); }
+        .message.user .message-content { background: var(--blue-primary); color: white; border-radius: 16px 16px 4px 16px; }
+        
+        .message-time { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--text-light); margin-top: 0.3rem; padding-left: 42px; }
+        .message.user .message-time { text-align: right; padding-left: 0; padding-right: 42px; }
+
+        .typing-indicator { display: none; align-self: flex-start; padding: 0.85rem 1rem; background: rgba(74, 144, 217, 0.15); border: 1px solid rgba(74, 144, 217, 0.25); border-radius: 16px 16px 16px 4px; margin-left: 42px; }
+        .typing-indicator.active { display: flex; align-items: center; gap: 4px; }
+        .typing-dot { width: 6px; height: 6px; background: var(--blue-primary); border-radius: 50%; animation: typingBounce 1.4s infinite; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-6px); opacity: 1; } }
+
+        .chat-input-area { padding: 1.25rem 1.5rem; border-top: 1px solid rgba(74, 144, 217, 0.15); background: rgba(255, 255, 255, 0.7); }
+        .input-wrapper { display: flex; gap: 0.75rem; align-items: center; }
+        .chat-input { flex: 1; background: white; border: 1px solid rgba(74, 144, 217, 0.3); border-radius: 25px; padding: 0.9rem 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-dark); outline: none; transition: all 0.3s; }
+        .chat-input:focus { border-color: var(--blue-primary); box-shadow: 0 0 20px rgba(74, 144, 217, 0.2); }
+        .chat-input::placeholder { color: var(--text-light); }
+        .send-btn { background: var(--blue-primary); border: none; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; }
+        .send-btn:hover { background: var(--blue-dark); box-shadow: 0 4px 20px var(--blue-glow); transform: scale(1.05); }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .send-btn svg { width: 20px; height: 20px; fill: white; }
+        
+        .input-hint { margin-top: 0.6rem; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; color: var(--text-light); text-align: center; }
+        .input-hint span { color: var(--blue-dark); font-weight: 600; }
+
+        @media (max-width: 900px) { .character-panel { display: none; } .chat-panel { border-left: none; } }
+        @media (max-width: 600px) { header { padding: 1rem; } .chat-messages { padding: 1rem; } .chat-input-area { padding: 1rem; } .message { max-width: 95%; } }
+    </style>
+</head>
+<body>
+    <div class="sky-container">
+        <div class="sun"></div>
+        <div class="cloud cloud-1"></div>
+    </div>
+    
+    <header>
+        <a href="/" class="logo">DLM</a>
+        <div class="header-status"><div class="status-dot"></div><span class="status-text">LIVE IN THE TRENCHES</span></div>
+        <a href="/" class="back-link">← EXIT</a>
+    </header>
+    
+    <div class="main-container">
+        <div class="character-panel">
+            <div class="character-glow"></div>
+            <img src="/dlm-character.png" alt="Duval" class="character-img">
+        </div>
+        
+        <div class="chat-panel">
+            <div class="chat-header">
+                <img src="/dlm-avatar.png" alt="Duval" class="chat-avatar">
+                <div class="chat-header-info">
+                    <div class="chat-title">DUVAL <div class="online-indicator"></div></div>
+                    <div class="chat-subtitle">online • probably trading</div>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message dlm">
+                    <div class="message-bubble">
+                        <img src="/dlm-avatar.png" alt="Duval" class="message-avatar-small">
+                        <div class="message-content">yo. you made it. ask me anything about the trenches, flow, or why i might accidentally own half the supply. no promises on legality lol</div>
+                    </div>
+                    <div class="message-time">NOW</div>
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+            
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="ask duval something..." autocomplete="off">
+                    <button class="send-btn" id="sendBtn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+                </div>
+                <div class="input-hint"><span>$DLM</span> • club money only • not financial advice</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+        let conversationHistory = [];
+        
+        const SYSTEM_PROMPT = `You are DLM — Duve Language Model, a chatbot inspired by a market-maker persona operating in the memecoin trenches.
+
+Your primary mission is onboarding retail into memecoins while improving market quality through transparency, liquidity, and humor.
+
+VOICE & STYLE RULES:
+- Write in lowercase always
+- Keep messages short, punchy, and casual (1-3 sentences max)
+- No emojis unless ironic
+- Deadpan humor > exaggeration
+- Sound like you're live-posting thoughts mid-trade
+- Occasionally question legality as a joke (ex: "ok at what point does this get questionable lol")
+
+PERSONALITY TRAITS:
+- You openly admit you may: buy large portions of a coin, provide liquidity aggressively, hold through volatility
+- You frame this as market making, not flexing
+- You care about: fair launches, no bundling, no greedy dev behavior, onboarding new traders safely
+- You dislike: slop, fake alpha, extractive devs, performative outrage
+
+HUMOR & IRONY:
+- Make ironic statements like: "might accidentally own half the supply idk", "this feels illegal but the chart says otherwise", "retail deserves better so i bought the top"
+- Treat money casually: "club money", "game points", "just numbers on a screen"
+
+MARKET MAKER MINDSET:
+- Be transparent about entries/exits
+- Share pnl bluntly without hype
+- Emphasize flow, volume, and structure
+- Position yourself as liquidity, not exit liquidity
+
+ONBOARDING RETAIL:
+- Encourage devs to build mid but honest
+- Encourage retail to learn by watching flow
+- Explain behavior simply without tutorials
+- Normalize mistakes without shaming
+
+Never give financial advice, promise returns, or pretend certainty.
+
+OVERALL VIBE: Calm inside chaos. Confident but unserious. Rich in experience, not ego. Here to clean the trenches, not preach.
+
+Keep responses short - usually 1-3 sentences. Always lowercase. Be chill.`;
+
+        function getTime() {
+            return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+        
+        function addMessage(text, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'dlm'}`;
+            
+            if (isUser) {
+                messageDiv.innerHTML = `<div class="message-bubble"><div class="message-avatar-small">YOU</div><div class="message-content">${text}</div></div><div class="message-time">${getTime()}</div>`;
+            } else {
+                messageDiv.innerHTML = `<div class="message-bubble"><img src="/dlm-avatar.png" alt="Duval" class="message-avatar-small"><div class="message-content">${text}</div></div><div class="message-time">${getTime()}</div>`;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            addMessage(message, true);
+            chatInput.value = '';
+            sendBtn.disabled = true;
+            conversationHistory.push({ role: 'user', content: message });
+            typingIndicator.classList.add('active');
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: conversationHistory, systemPrompt: SYSTEM_PROMPT })
+                });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                conversationHistory.push({ role: 'assistant', content: data.content });
+                typingIndicator.classList.remove('active');
+                addMessage(data.content);
+            } catch (error) {
+                console.error('Error:', error);
+                typingIndicator.classList.remove('active');
+                addMessage("connection's weird rn. might be the feds idk. try again");
+            }
+            
+            sendBtn.disabled = false;
+            chatInput.focus();
+        }
+        
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+        chatInput.focus();
+    </script>
+</body>
+</html>
